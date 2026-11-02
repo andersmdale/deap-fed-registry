@@ -1,0 +1,12 @@
+Study,TRE,Tabulated demographic data,MMPS processing results,NeuroQuant processing results,Tabulated imaging results,Concatenated imaging results,Notes
+ABCD,tre-nbdc,/space/ceph/1/ABCD/data/release_archive/7_0/tabulated,/space/ceph/1/ABCD/data/release/derivatives/mmps_mproc,/space/ceph/1/ABCD/projects/nqlq_long,,/space/ceph/1/ABCD/data/release_archive/7_0/concatenated,
+HBCD,tre-nbdc,,,N/A,/space/ceph/1/HBCD/data/release_archive/2_1/tabulated ,,
+UKB,tre-ukb,/space/ceph/1/UKB/LAKE/phenotypes,/space/ceph/1/UKB/DATA/MRI/cmig_pipeline_UKB,???,,/space/ceph/1/UKB/DATA/MRI/imaging_concat ,
+ADNI,tre-adni,/space/ceph/1/CMIG/ADNI/LAKE/ADNIMERGE.csv,/space/ceph/1/CMIG/ADNI/MMPS,/space/ceph/1/CMIG/ADNI/NQLQ/, /space/ceph/1/CMIG/ADNI/LAKE,/space/ceph/1/CMIG/ADNI/MMPS/imaging_concat/imaging/,
+PING,tre-ping,"/space/ceph/1/CMIG/PING/ALL_PING_DATA_FINAL.xlsx, PLING_SuperSpreadsheet_FINAL_07092018.csv",/space/ceph/1/CMIG/PING/cmig_pipeline,???,,/space/ceph/1/CMIG/PING/imaging_concat ,
+PPMI,tre-ppmi,,/space/ceph/1/CMIG/PPMI/MMPS_class/,/space/ceph/1/BROCE/FLENI/NQLQ/,/space/ceph/1/CMIG/PPMI/LAKE ,,
+VETSA,tre-vetsa,,,,/space/ceph/1/VETSA,,
+HUNT,tre-hunt,,/space/ceph/1/CMIG/HUNT/MMPS/,/space/ceph/1/CMIG/HUNT/NQLQ/NQLQ_HUNT4/,/space/ceph/1/CMIG/HUNT/LAKE,,
+TOP,tre-top,,,,,,
+FLENI,tre-fleni,,/space/ceph/1/BROCE/FLENI/MMPS/,,/space/ceph/1/BROCE/FLENI/LAKE ,,
+HCP-YA,tre-hcpya,,,,,,

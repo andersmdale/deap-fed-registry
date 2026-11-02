@@ -45,6 +45,8 @@ npm run cli -- list-users
 npm run cli -- reset-password <username>     # prints a temporary password
 npm run cli -- make-admin <username>         # if every admin is locked out
 npm run cli -- backup                        # copy to ~/deap-fed-registry-data/backups/
+npm run cli -- import-csv imports/<file>.csv --dry-run   # preview adding paths from a sheet export
+npm run cli -- import-csv imports/<file>.csv             # add them (safe to re-run; existing paths are left alone)
 launchctl kickstart -k gui/$(id -u)/org.deapfed.registry   # restart
 tail -f ~/deap-fed-registry-data/registry.log
 ```

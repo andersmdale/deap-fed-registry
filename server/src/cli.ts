@@ -3,12 +3,14 @@
  *   npm run cli -- reset-password <username>     temporary password, must be changed at next sign-in
  *   npm run cli -- make-admin <username>         give the user the Admin role and all studies
  *   npm run cli -- list-users
+ *   npm run cli -- import-csv <file> [--dry-run]   add paths from a CSV export of the data-paths sheet
  *   npm run cli -- backup [file]                 consistent copy of the database (safe while the server runs)
  */
 import fs from "node:fs";
 import path from "node:path";
 import { generatePassword, hashPassword } from "./auth.js";
 import { audit, DATA_DIR, db, migrate } from "./db.js";
+import { importCsv } from "./importCsv.js";
 
 migrate();
 const [cmd, name] = process.argv.slice(2);
@@ -54,6 +56,19 @@ switch (cmd) {
     console.log(`Backed up the registry to ${file}`);
     break;
   }
+  case "import-csv": {
+    if (!name) { console.error("Give the CSV file: npm run cli -- import-csv imports/<file>.csv [--dry-run]"); process.exit(2); }
+    const dryRun = process.argv.includes("--dry-run");
+    const rep = importCsv(path.resolve(process.env.INIT_CWD || process.cwd(), name), { dryRun });
+    const show = (title: string, xs: string[]) => { if (xs.length) { console.log(`\n${title} (${xs.length}):`); xs.forEach((x) => console.log("  " + x)); } };
+    show(dryRun ? "Would add" : "Added", rep.created);
+    show(dryRun ? "Would mark N/A" : "Marked N/A", rep.notApplicable);
+    show("Already recorded, left alone", rep.skipped);
+    show("Unknown in the sheet (???), skipped", rep.unknown);
+    show("Problems", rep.problems);
+    console.log(dryRun ? "\nDry run: nothing was changed." : "\nDone. Reload the registry page to see the changes.");
+    break;
+  }
   default:
-    console.log("Commands: reset-password <username> | make-admin <username> | list-users | backup [file]");
+    console.log("Commands: reset-password <username> | make-admin <username> | list-users | backup [file] | import-csv <file> [--dry-run]");
 }
