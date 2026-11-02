@@ -13,7 +13,7 @@ import { ActivityPage } from "./pages/Activity";
 import { PeoplePage } from "./pages/People";
 import { AccountPage } from "./pages/Account";
 
-type Session = { kind: "loading" } | { kind: "setup" } | { kind: "signed-out" } | { kind: "error"; message: string } | { kind: "in"; me: Me };
+type Session = { kind: "loading" } | { kind: "setup"; tokenFile: string } | { kind: "signed-out" } | { kind: "error"; message: string } | { kind: "in"; me: Me };
 
 export default function App() {
   const [session, setSession] = useState<Session>({ kind: "loading" });
@@ -25,8 +25,8 @@ export default function App() {
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
         try {
-          const { needed } = await get<{ needed: boolean }>("/auth/setup");
-          setSession(needed ? { kind: "setup" } : { kind: "signed-out" });
+          const s = await get<{ needed: boolean; tokenFile?: string }>("/auth/setup");
+          setSession(s.needed ? { kind: "setup", tokenFile: s.tokenFile ?? "setup-token.txt" } : { kind: "signed-out" });
         } catch (e2) {
           setSession({ kind: "error", message: (e2 as Error).message });
         }
@@ -41,7 +41,7 @@ export default function App() {
   switch (session.kind) {
     case "loading": return <div className="center-page"><p className="note">Loading…</p></div>;
     case "error": return <div className="center-page"><div className="banner bad">{session.message}</div><button onClick={check}>Try again</button></div>;
-    case "setup": return <Setup onDone={signedIn} />;
+    case "setup": return <Setup onDone={signedIn} tokenFile={session.tokenFile} />;
     case "signed-out": return <Login onDone={signedIn} />;
     case "in":
       if (session.me.mustChangePassword) return <PasswordChange forced me={session.me} onDone={signedIn} onSignOut={check} />;

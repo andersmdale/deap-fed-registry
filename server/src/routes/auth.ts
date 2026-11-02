@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import {
   checkPasswordRules, checkSetupToken, clearSetupToken, createSession, destroySession, hashPassword,
-  loadSessionUser, noteFailure, noteSuccess, setupNeeded, throttle, verifyPassword,
+  loadSessionUser, noteFailure, TOKEN_FILE, noteSuccess, setupNeeded, throttle, verifyPassword,
 } from "../auth.js";
 import { audit, db } from "../db.js";
 import { h, HttpError, me, parse } from "../http.js";
@@ -13,7 +13,7 @@ const username = z.string().trim().min(2).max(64).regex(/^[A-Za-z0-9._@-]+$/, "u
 export function authRoutes(): Router {
   const r = Router();
 
-  r.get("/setup", h((_req, res) => res.json({ needed: setupNeeded() })));
+  r.get("/setup", h((_req, res) => res.json(setupNeeded() ? { needed: true, tokenFile: TOKEN_FILE } : { needed: false })));
 
   r.post("/setup", h((req, res) => {
     if (!setupNeeded()) throw new HttpError(409, "Setup is already done. Sign in instead.");
@@ -22,7 +22,7 @@ export function authRoutes(): Router {
     throttle("setup:" + req.ip);
     if (!checkSetupToken(b.token)) {
       noteFailure("setup:" + req.ip);
-      throw new HttpError(403, "That setup token doesn't match data/setup-token.txt on the server");
+      throw new HttpError(403, `That setup token doesn't match ${TOKEN_FILE} on the server`);
     }
     checkPasswordRules(b.password);
     const adminRole = db.prepare("SELECT id FROM roles WHERE name = 'Admin'").get() as { id: number } | undefined;

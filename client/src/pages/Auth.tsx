@@ -40,7 +40,7 @@ export function Login({ onDone }: { onDone: (me: Me) => void }) {
   );
 }
 
-export function Setup({ onDone }: { onDone: (me: Me) => void }) {
+export function Setup({ onDone, tokenFile }: { onDone: (me: Me) => void; tokenFile: string }) {
   const [f, setF] = useState({ token: "", username: "", displayName: "", email: "", password: "", again: "" });
   const [err, setErr] = useState("");
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
@@ -50,7 +50,7 @@ export function Setup({ onDone }: { onDone: (me: Me) => void }) {
     try { onDone((await post<{ user: Me }>("/auth/setup", f)).user); } catch (x) { setErr((x as Error).message); }
   };
   return (
-    <Frame title="Create the first admin" intro="No accounts exist yet. The setup token is in data/setup-token.txt on the server; it stops working once this account exists.">
+    <Frame title="Create the first admin" intro={`No accounts exist yet. On the server, run: cat ${tokenFile} and paste the token below. It stops working once this account exists.`}>
       <form onSubmit={submit} className="stack">
         <Field label="Setup token">{(id) => <input id={id} className="mono" value={f.token} onChange={set("token")} required />}</Field>
         <div className="two">

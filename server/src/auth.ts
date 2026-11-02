@@ -104,7 +104,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
 }
 
 /* ---- first-run setup ---- */
-const TOKEN_FILE = path.join(DATA_DIR, "setup-token.txt");
+export const TOKEN_FILE = path.join(DATA_DIR, "setup-token.txt");
 
 export function setupNeeded(): boolean {
   return (db.prepare("SELECT COUNT(*) AS n FROM users").get() as { n: number }).n === 0;
