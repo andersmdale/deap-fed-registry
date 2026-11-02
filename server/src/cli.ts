@@ -49,7 +49,8 @@ switch (cmd) {
     const stamp = new Date().toISOString().replace(/[:T]/g, "-").slice(0, 19);
     const file = path.resolve(name || path.join(DATA_DIR, "backups", `registry-${stamp}.db`));
     fs.mkdirSync(path.dirname(file), { recursive: true });
-    await db.backup(file);
+    if (fs.existsSync(file)) { console.error(`${file} already exists.`); process.exit(1); }
+    db.prepare("VACUUM INTO ?").run(file);
     console.log(`Backed up the registry to ${file}`);
     break;
   }

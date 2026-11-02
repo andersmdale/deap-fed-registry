@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { audit, db, diffSummary } from "../db.js";
+import { audit, db, diffSummary, tx } from "../db.js";
 import { h, HttpError, idParam, parse, requirePriv } from "../http.js";
 import { categoryLabel, locationOut, runOut, studyLabel, workflowsOut, type LocationRow, type RunRow } from "./data.js";
 
@@ -34,7 +34,7 @@ export function workflowRoutes(): Router {
     if (!b.outputs.length && !b.otherOutputs) throw new HttpError(400, "Give the workflow at least one output");
     if (db.prepare("SELECT 1 FROM workflows WHERE name = ?").get(b.name)) throw new HttpError(409, "A workflow with that name exists");
     const t = Date.now();
-    const id = db.transaction(() => {
+    const id = tx(() => {
       const id = Number(db.prepare(`INSERT INTO workflows(name, description, host, tool, version, command, other_outputs, sort_order, created_at, created_by, updated_at, updated_by)
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(b.name, b.description, b.host, b.tool, b.version, b.command, b.otherOutputs, b.sortOrder, t, u.id, t, u.id).lastInsertRowid);
       writeIo(id, b.inputs, b.outputs);
@@ -52,7 +52,7 @@ export function workflowRoutes(): Router {
     const b = parse(wfSchema.extend({ archived: z.boolean().default(false) }), req.body);
     if (!b.outputs.length && !b.otherOutputs) throw new HttpError(400, "Give the workflow at least one output");
     if (db.prepare("SELECT 1 FROM workflows WHERE name = ? AND id != ?").get(b.name, id)) throw new HttpError(409, "A workflow with that name exists");
-    db.transaction(() => {
+    tx(() => {
       db.prepare(`UPDATE workflows SET name=?, description=?, host=?, tool=?, version=?, command=?, other_outputs=?, sort_order=?, archived=?, updated_at=?, updated_by=? WHERE id=?`)
         .run(b.name, b.description, b.host, b.tool, b.version, b.command, b.otherOutputs, b.sortOrder, b.archived ? 1 : 0, Date.now(), u.id, id);
       writeIo(id, b.inputs, b.outputs);
@@ -82,7 +82,7 @@ export function workflowRoutes(): Router {
     if (b.createOutputs.length && !b.outputPath) throw new HttpError(400, "Enter the output location to record it as data");
     if (b.createOutputs.length) requirePriv(req, "locations.edit", b.studyId);
     const t = Date.now();
-    const out = db.transaction(() => {
+    const out = tx(() => {
       const locs = wf.inputs.length
         ? db.prepare(`SELECT * FROM locations WHERE archived = 0 AND study_id = ? AND category_id IN (${wf.inputs.map(() => "?").join(",")})`)
           .all(b.studyId, ...wf.inputs) as LocationRow[]

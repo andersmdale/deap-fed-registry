@@ -12,9 +12,9 @@ DATA="${REGISTRY_DATA:-$HOME/deap-fed-registry-data}"
 NODE="$(command -v node || true)"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 
-[ -n "$NODE" ] || { echo "Node.js isn't installed or not on PATH (need version 20 or newer)."; exit 1; }
-major="$("$NODE" -p 'process.versions.node.split(".")[0]')"
-[ "$major" -ge 20 ] || { echo "Node.js $("$NODE" -v) is too old; install version 20 or newer."; exit 1; }
+[ -n "$NODE" ] || { echo "Node.js isn't installed or not on PATH (need version 22.13 or newer)."; exit 1; }
+"$NODE" -e 'require("node:sqlite")' 2>/dev/null || {
+  echo "Node.js $("$NODE" -v) has no built-in SQLite; install Node.js 22.13 or newer (e.g. brew upgrade node)."; exit 1; }
 case "$DATA" in *Dropbox*) echo "Refusing to keep the database in Dropbox ($DATA). Set REGISTRY_DATA to a local folder."; exit 1;; esac
 
 echo "== installing dependencies and building"
@@ -30,7 +30,7 @@ cat > "$PLIST" <<EOF
 <plist version="1.0">
 <dict>
   <key>Label</key><string>$LABEL</string>
-  <key>ProgramArguments</key><array><string>$NODE</string><string>$REPO/server/dist/index.js</string></array>
+  <key>ProgramArguments</key><array><string>$NODE</string><string>--disable-warning=ExperimentalWarning</string><string>$REPO/server/dist/index.js</string></array>
   <key>WorkingDirectory</key><string>$REPO</string>
   <key>EnvironmentVariables</key><dict>
     <key>REGISTRY_PORT</key><string>$PORT</string>

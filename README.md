@@ -10,11 +10,11 @@ A web app that records, for every study DEAP-Fed works with, where each category
 - **Workflows** with input and output categories. Recording a run snapshots its inputs and can register the output location. When an input changes later, the output is flagged *Inputs changed*.
 - **History.** Every change is logged with person, time and a before/after summary. You can see it per record and on the Activity page.
 
-Stack: React + TypeScript (Vite) client, Node + Express + TypeScript server, SQLite (better-sqlite3). One process serves both the API and the built client.
+Stack: React + TypeScript (Vite) client, Node + Express + TypeScript server, and Node's built-in SQLite (`node:sqlite`, so there is no native module to compile). One process serves both the API and the built client.
 
 ## Install on the Mac Pro
 
-Requires Node.js 20 or newer (`node -v`).
+Requires Node.js 22.13 or newer (`node -v`).
 
 ```bash
 cd ~/Dropbox/github/deap-fed-registry

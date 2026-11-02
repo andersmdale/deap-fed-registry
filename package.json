@@ -8,7 +8,7 @@
     "client"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13"
   },
   "scripts": {
     "build": "npm run build -w client && npm run build -w server",

@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,10 +13,45 @@ export const DATA_DIR = path.resolve(process.env.REGISTRY_DATA
   || path.join(here, "../../data"));
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
-export const db = new Database(process.env.REGISTRY_DB || path.join(DATA_DIR, "registry.db"));
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
-db.pragma("busy_timeout = 5000");
+/** Node's built-in SQLite (no native add-on to compile). */
+const raw = new DatabaseSync(process.env.REGISTRY_DB || path.join(DATA_DIR, "registry.db"));
+raw.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
+
+type Param = string | number | bigint | null | Uint8Array;
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/** Thin wrapper: rows come back untyped so each query casts to its own row shape. */
+export const db = {
+  exec: (sql: string) => raw.exec(sql),
+  prepare(sql: string) {
+    const st = raw.prepare(sql);
+    return {
+      run: (...args: Param[]) => st.run(...args),
+      get: (...args: Param[]): any => st.get(...args),
+      all: (...args: unknown[]): any[] => st.all(...(args as Param[])),
+    };
+  },
+};
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/** Wrap `fn` in BEGIN/COMMIT, rolling back if it throws. Nested calls join the outer transaction. */
+let depth = 0;
+export function tx<T>(fn: () => T): () => T {
+  return () => {
+    if (depth > 0) return fn();
+    db.exec("BEGIN IMMEDIATE");
+    depth++;
+    try {
+      const out = fn();
+      db.exec("COMMIT");
+      return out;
+    } catch (e) {
+      db.exec("ROLLBACK");
+      throw e;
+    } finally {
+      depth--;
+    }
+  };
+}
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS roles(
@@ -147,10 +182,10 @@ CREATE INDEX IF NOT EXISTS runs_study ON runs(study_id, workflow_id);
 
 export function migrate(): void {
   db.exec(SCHEMA);
-  const version = db.pragma("user_version", { simple: true }) as number;
+  const version = Number((db.prepare("PRAGMA user_version").get() as { user_version: number }).user_version);
   if (version < 1) {
-    db.transaction(seed)();
-    db.pragma("user_version = 1");
+    tx(seed)();
+    db.exec("PRAGMA user_version = 1");
   }
 }
 

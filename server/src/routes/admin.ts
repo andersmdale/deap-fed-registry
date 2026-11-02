@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { checkPasswordRules, generatePassword, hashPassword } from "../auth.js";
-import { audit, db, diffSummary } from "../db.js";
+import { audit, db, diffSummary, tx } from "../db.js";
 import { h, HttpError, idParam, parse, requirePriv } from "../http.js";
 import { PRIVILEGE_IDS, parsePrivileges, parseScope, type Privilege } from "../privileges.js";
 
@@ -86,7 +86,7 @@ export function adminRoutes(): Router {
     if (id === u.id && !b.active) throw new HttpError(400, "You can't deactivate your own account");
     const before = { displayName: cur.display_name, email: cur.email, role: roleName(cur.role_id), studies: scopeText(parseScope(cur.study_scope)), active: !!cur.active };
     const after = { displayName: b.displayName, email: b.email, role: roleName(b.roleId), studies: scopeText(b.studyScope), active: b.active };
-    db.transaction(() => {
+    tx(() => {
       db.prepare(`UPDATE users SET display_name=?, email=?, role_id=?, study_scope=?, active=?, updated_at=?, updated_by=? WHERE id=?`)
         .run(b.displayName, b.email, b.roleId, JSON.stringify(b.studyScope), b.active ? 1 : 0, Date.now(), u.id, id);
       ensureAdminRemains();
@@ -134,7 +134,7 @@ export function adminRoutes(): Router {
     if (clash) throw new HttpError(409, "A role with that name exists");
     const before = { name: cur.name, description: cur.description, privileges: parsePrivileges(cur.privileges).join(", ") };
     const after = { name: b.name, description: b.description, privileges: b.privileges.join(", ") };
-    db.transaction(() => {
+    tx(() => {
       db.prepare("UPDATE roles SET name=?, description=?, privileges=?, updated_at=?, updated_by=? WHERE id=?")
         .run(b.name, b.description, JSON.stringify(b.privileges), Date.now(), u.id, id);
       ensureAdminRemains();
