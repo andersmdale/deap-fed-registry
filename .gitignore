@@ -1,0 +1,9 @@
+node_modules/
+dist/
+data/
+.registry-data
+*.db
+*.db-wal
+*.db-shm
+setup-token.txt
+.DS_Store
