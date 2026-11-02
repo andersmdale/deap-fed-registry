@@ -46,11 +46,19 @@ EOF
 
 launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
 launchctl bootstrap "gui/$(id -u)" "$PLIST"
-sleep 2
-if curl -fsS "http://localhost:$PORT/api/auth/setup" >/dev/null; then
+echo "== waiting for the server to answer on port $PORT"
+ok=""
+for _ in $(seq 1 30); do
+  if curl -fsS "http://localhost:$PORT/api/auth/setup" >/dev/null 2>&1; then ok=1; break; fi
+  sleep 1
+done
+if [ -n "$ok" ]; then
   echo "== running on http://localhost:$PORT  (log: $DATA/registry.log)"
 else
-  echo "!! the service didn't answer yet; check $DATA/registry.log"
+  echo "!! the server didn't answer within 30 s. Last lines of $DATA/registry.log:"
+  tail -n 30 "$DATA/registry.log" 2>/dev/null || echo "(no log yet)"
+  launchctl print "gui/$(id -u)/$LABEL" 2>/dev/null | grep -E "state =|last exit" || true
+  exit 1
 fi
 if [ -f "$DATA/setup-token.txt" ]; then
   echo "== first run: open the site and create the admin account with this setup token:"
