@@ -31,6 +31,17 @@ The database deliberately lives outside Dropbox, because syncing a live SQLite f
 
 On first start there are no accounts. The installer prints a one-time setup token, which is also in `~/deap-fed-registry-data/setup-token.txt`. Open `http://localhost:8095` (or `http://169.228.56.236:8095` from another machine) and create the first admin with it. Add everyone else under **People & roles**. Each new user gets a temporary password and chooses their own at first sign-in.
 
+## Install on a Linux server
+
+Requires Node.js 22.13 or newer, systemd and git. Clone the repo, then run one of these:
+
+```bash
+scripts/install-linux.sh                 # user service: no root needed, runs as you
+sudo -E scripts/install-linux.sh --system    # system service: starts at boot
+```
+
+A user service stops when you log out unless lingering is on (`loginctl enable-linger $USER`, which may need an admin). The log goes to `~/deap-fed-registry-data/registry.log` rather than journalctl. Restart with `systemctl --user restart deap-fed-registry` (or `sudo systemctl restart deap-fed-registry` for the system service).
+
 ## Update after code changes
 
 ```bash
@@ -47,7 +58,7 @@ npm run cli -- make-admin <username>         # if every admin is locked out
 npm run cli -- backup                        # copy to ~/deap-fed-registry-data/backups/
 npm run cli -- import-csv imports/<file>.csv --dry-run   # preview adding paths from a sheet export
 npm run cli -- import-csv imports/<file>.csv             # add them (safe to re-run; existing paths are left alone)
-launchctl kickstart -k gui/$(id -u)/org.deapfed.registry   # restart
+launchctl kickstart -k gui/$(id -u)/org.deapfed.registry   # restart (macOS)
 tail -f ~/deap-fed-registry-data/registry.log
 ```
 
