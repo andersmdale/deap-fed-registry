@@ -4,11 +4,12 @@ import path from "node:path";
 import type { NextFunction, Request, Response } from "express";
 import { DATA_DIR, db } from "./db.js";
 import { HttpError } from "./http.js";
+import { TLS_ON } from "./tls.js";
 import { parsePrivileges, parseScope, type SessionUser } from "./privileges.js";
 
 export const SESSION_COOKIE = "registry_session";
 const SESSION_MS = Number(process.env.REGISTRY_SESSION_HOURS || 12) * 3600_000;
-const SECURE = process.env.REGISTRY_SECURE_COOKIES === "1";
+const SECURE = process.env.REGISTRY_SECURE_COOKIES === "1" || TLS_ON;
 export const MIN_PASSWORD = 10;
 
 const SCRYPT = { N: 16384, r: 8, p: 1 } as const;

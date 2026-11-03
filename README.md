@@ -42,6 +42,18 @@ sudo -E scripts/install-linux.sh --system    # system service: starts at boot
 
 A user service stops when you log out unless lingering is on (`loginctl enable-linger $USER`, which may need an admin). The log goes to `~/deap-fed-registry-data/registry.log` rather than journalctl. Restart with `systemctl --user restart deap-fed-registry` (or `sudo systemctl restart deap-fed-registry` for the system service).
 
+## HTTPS
+
+The server switches to HTTPS as soon as it finds a certificate and key in `~/deap-fed-registry-data/tls/` (`cert.pem`, `key.pem`). Once it does, session cookies are marked Secure and browsers are told to stay on HTTPS.
+
+```bash
+scripts/tls.sh self-signed cmiggw.ucsd.edu        # start now; browsers warn until you trust it
+scripts/tls.sh install fullchain.pem privkey.pem  # a real certificate (e.g. from UCSD IT or Let's Encrypt)
+scripts/tls.sh status
+```
+
+Each command restarts the service. To also answer plain HTTP with a redirect, set `REGISTRY_HTTP_REDIRECT_PORT` (for example 8094) in the service. To serve plain HTTP behind your own TLS proxy, set `REGISTRY_TLS=off`, `REGISTRY_SECURE_COOKIES=1` and `REGISTRY_TRUST_PROXY=1`.
+
 ## Update after code changes
 
 ```bash
@@ -65,7 +77,8 @@ tail -f ~/deap-fed-registry-data/registry.log
 ## Security notes
 
 - Passwords are hashed with scrypt. Sessions are HttpOnly, SameSite=Lax cookies that last 12 hours (`REGISTRY_SESSION_HOURS`). Five failed sign-ins lock that username and address out for 15 minutes.
-- The server speaks plain HTTP. Use it on the campus network or VPN, or put it behind a TLS proxy and set `REGISTRY_SECURE_COOKIES=1` and `REGISTRY_TRUST_PROXY=1`.
+- Turn on HTTPS (above) before giving others access. Without a certificate the server speaks plain HTTP, and passwords cross the network unencrypted.
+- Responses carry `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` and, under HTTPS, HSTS.
 - The registry stores paths and metadata only, never study data.
 
 ## Development

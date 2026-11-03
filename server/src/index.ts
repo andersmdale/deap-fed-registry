@@ -1,5 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import fs from "node:fs";
+import http from "node:http";
+import https from "node:https";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ensureSetupToken, loadUser, requireAuth } from "./auth.js";
@@ -9,6 +11,7 @@ import { adminRoutes } from "./routes/admin.js";
 import { authRoutes } from "./routes/auth.js";
 import { dataRoutes } from "./routes/data.js";
 import { workflowRoutes } from "./routes/workflows.js";
+import { tlsFiles } from "./tls.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.REGISTRY_PORT || 8095);
@@ -19,6 +22,14 @@ migrate();
 export const app = express();
 app.disable("x-powered-by");
 if (process.env.REGISTRY_TRUST_PROXY === "1") app.set("trust proxy", 1);
+const tls = tlsFiles();
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "same-origin");
+  if (tls || process.env.REGISTRY_SECURE_COOKIES === "1") res.setHeader("Strict-Transport-Security", "max-age=15552000");
+  next();
+});
 app.use(express.json({ limit: "1mb" }));
 
 // Every state-changing API call must carry this header; browsers won't send it cross-site without CORS approval.
@@ -57,10 +68,23 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 if (process.env.REGISTRY_NO_LISTEN !== "1") {
-  app.listen(PORT, HOST, () => {
-    console.log(`DEAP-Fed Data Registry on http://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT} (data in ${DATA_DIR})`);
+  const server = tls
+    ? https.createServer({ cert: fs.readFileSync(tls.cert), key: fs.readFileSync(tls.key) }, app)
+    : http.createServer(app);
+  server.listen(PORT, HOST, () => {
+    const scheme = tls ? "https" : "http";
+    console.log(`DEAP-Fed Data Registry on ${scheme}://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT} (data in ${DATA_DIR})`);
+    console.log(tls ? `TLS certificate ${tls.cert}` : "Plain HTTP: no certificate found. Run scripts/tls.sh to enable HTTPS.");
     if (!fs.existsSync(dist)) console.log("Client not built yet: run `npm run build` in the repo root.");
     const tokenFile = ensureSetupToken();
     if (tokenFile) console.log(`No accounts yet. Open the site and create the first admin with the setup token in ${tokenFile}`);
   });
+  // Optional: answer plain HTTP on another port (e.g. 80 or 8094) with a redirect to the HTTPS address.
+  const redirectPort = Number(process.env.REGISTRY_HTTP_REDIRECT_PORT || 0);
+  if (tls && redirectPort) {
+    http.createServer((req, res) => {
+      const host = (req.headers.host || "localhost").replace(/:\d+$/, "");
+      res.writeHead(301, { Location: `https://${host}:${PORT}${req.url || "/"}` }).end();
+    }).listen(redirectPort, HOST, () => console.log(`Redirecting http://…:${redirectPort} to HTTPS`));
+  }
 }

@@ -49,11 +49,13 @@ launchctl bootstrap "gui/$(id -u)" "$PLIST"
 echo "== waiting for the server to answer on port $PORT"
 ok=""
 for _ in $(seq 1 30); do
-  if curl -fsS "http://localhost:$PORT/api/auth/setup" >/dev/null 2>&1; then ok=1; break; fi
+  if curl -kfsS "https://localhost:$PORT/api/auth/setup" >/dev/null 2>&1; then ok=https; break; fi
+  if curl -fsS "http://localhost:$PORT/api/auth/setup" >/dev/null 2>&1; then ok=http; break; fi
   sleep 1
 done
 if [ -n "$ok" ]; then
-  echo "== running on http://localhost:$PORT  (log: $DATA/registry.log)"
+  echo "== running on $ok://localhost:$PORT  (log: $DATA/registry.log)"
+  if [ "$ok" = http ]; then echo "   Plain HTTP. Turn on HTTPS with: scripts/tls.sh self-signed <hostname>   (or scripts/tls.sh install <cert> <key>)"; fi
 else
   echo "!! the server didn't answer within 30 s. Last lines of $DATA/registry.log:"
   tail -n 30 "$DATA/registry.log" 2>/dev/null || echo "(no log yet)"
