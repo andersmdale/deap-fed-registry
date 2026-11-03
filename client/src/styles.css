@@ -21,7 +21,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
-.wrap { max-width: 1440px; margin: 0 auto; padding: 20px 16px 56px; }
+.wrap { max-width: none; margin: 0 auto; padding: 20px 16px 56px; }
 h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
 h2 { font-size: 17px; margin: 0; }
 h3 { font-size: 13px; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
@@ -107,8 +107,8 @@ th.priv-col { min-width: 110px; }
 
 .matrix td { padding: 4px; }
 .matrix th.group { text-align: center; border-left: 1px solid var(--line); color: var(--ink); }
-.matrix th.dt { min-width: 150px; white-space: normal; }
-.matrix td.st { padding: 8px 10px; min-width: 150px; }
+.matrix th.dt { min-width: 300px; white-space: normal; }
+.matrix td.st { padding: 8px 10px; min-width: 300px; }
 .matrix .sticky-col { position: sticky; left: 0; background: var(--surface); z-index: 1; box-shadow: 1px 0 0 var(--line); }
 .matrix th.sticky-col { background: var(--sunk); }
 .st b { display: block; }

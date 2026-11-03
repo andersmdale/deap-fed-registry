@@ -75,7 +75,7 @@ export function DataPage() {
                       <td key={c.id}>
                         <button className="cell" onClick={() => setOpen({ studyId: s.id, categoryId: c.id })} aria-label={`${studyLabel(s)}, ${c.label}: ${STATUS_LABEL[st]}`}>
                           <Chip status={st} />
-                          {p && <span className="p">{p.length > 60 ? "…" + p.slice(-58) : p}</span>}
+                          {p && <span className="p">{p.length > 120 ? "…" + p.slice(-118) : p}</span>}
                           {locs.length > 1 && <span className="more">+{locs.length - 1} more</span>}
                         </button>
                       </td>
