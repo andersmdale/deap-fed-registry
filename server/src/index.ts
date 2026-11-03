@@ -2,6 +2,7 @@ import express, { type NextFunction, type Request, type Response } from "express
 import fs from "node:fs";
 import http from "node:http";
 import https from "node:https";
+import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ensureSetupToken, loadUser, requireAuth } from "./auth.js";
@@ -68,9 +69,25 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 if (process.env.REGISTRY_NO_LISTEN !== "1") {
-  const server = tls
-    ? https.createServer({ cert: fs.readFileSync(tls.cert), key: fs.readFileSync(tls.key) }, app)
-    : http.createServer(app);
+  let server: net.Server;
+  if (tls) {
+    // One port for both: TLS handshakes go to HTTPS; plain HTTP gets a redirect to the https:// address.
+    const secure = https.createServer({ cert: fs.readFileSync(tls.cert), key: fs.readFileSync(tls.key) }, app);
+    const redirect = http.createServer((req, res) => {
+      res.writeHead(301, { Location: `https://${req.headers.host || `localhost:${PORT}`}${req.url || "/"}` }).end();
+    });
+    server = net.createServer((sock) => {
+      sock.once("data", (buf) => {
+        sock.pause();
+        sock.unshift(buf);
+        (buf[0] === 0x16 ? secure : redirect).emit("connection", sock);
+        process.nextTick(() => sock.resume());
+      });
+      sock.on("error", () => sock.destroy());
+    });
+  } else {
+    server = http.createServer(app);
+  }
   server.listen(PORT, HOST, () => {
     const scheme = tls ? "https" : "http";
     console.log(`DEAP-Fed Data Registry on ${scheme}://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT} (data in ${DATA_DIR})`);
